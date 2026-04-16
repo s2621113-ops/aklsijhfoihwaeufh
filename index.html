@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>리듬 게임 (D, F, J, K)</title>
+    <title>유튜브 리듬 게임 (D, F, J, K)</title>
+    <script src="https://www.youtube.com/iframe_api"></script>
     <style>
         body {
             background-color: #222;
@@ -21,9 +22,10 @@
             border-radius: 10px;
             margin-bottom: 20px;
             text-align: center;
+            z-index: 100;
         }
         #setup-ui input {
-            width: 300px;
+            width: 350px;
             padding: 10px;
             margin-bottom: 10px;
             border: none;
@@ -31,25 +33,36 @@
         }
         #setup-ui button {
             padding: 10px 20px;
-            background-color: #00ffcc;
-            color: #000;
+            background-color: #ff0000;
+            color: #fff;
             border: none;
             border-radius: 5px;
             font-weight: bold;
             cursor: pointer;
         }
         #setup-ui button:hover {
-            background-color: #00ccaa;
+            background-color: #cc0000;
         }
         #game-container {
             position: relative;
             width: 400px;
             height: 600px;
-            background-color: #111;
+            background-color: rgba(17, 17, 17, 0.85);
             border: 2px solid #555;
             overflow: hidden;
-            display: none; /* 처음엔 게임 화면 숨김 */
+            display: none; 
             flex-direction: row;
+        }
+        /* 유튜브 영상을 게임 배경으로 깔기 */
+        #youtube-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.5; /* 배경 영상 투명도 */
         }
         .track {
             flex: 1;
@@ -72,7 +85,7 @@
             bottom: 50px;
             width: 100%;
             height: 10px;
-            background-color: rgba(255, 0, 0, 0.5);
+            background-color: rgba(255, 0, 0, 0.7);
             z-index: 10;
         }
         .key-label {
@@ -82,10 +95,11 @@
             text-align: center;
             font-weight: bold;
             font-size: 20px;
-            color: #888;
+            color: #ccc;
+            text-shadow: 1px 1px 2px black;
         }
         .key-active {
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: rgba(255, 255, 255, 0.3);
         }
         #score-display {
             font-size: 24px;
@@ -98,19 +112,20 @@
 <body>
 
     <div id="setup-ui">
-        <h2>음악 링크를 넣어주세요</h2>
-        <input type="text" id="music-url" placeholder="예: https://example.com/music.mp3">
+        <h2>유튜브 링크를 넣어주세요</h2>
+        <input type="text" id="youtube-url" placeholder="예: https://www.youtube.com/watch?v=어쩌구저쩌구">
         <br>
-        <button onclick="startGame()">게임 시작</button>
-        <p style="font-size: 12px; color: #aaa; margin-top: 10px;">
-            ※ 주의: 외부 보안(CORS)이 허용된 mp3 링크만 재생됩니다.<br>
-            유튜브 링크는 브라우저 정책상 오디오를 직접 추출할 수 없습니다.
+        <button onclick="startGame()">유튜브로 게임 시작!</button>
+        <p style="font-size: 13px; color: #bbb; margin-top: 10px;">
+            ※ 음악은 유튜브에서 재생되며, 노트는 무작위로 떨어집니다.
         </p>
     </div>
 
     <div id="score-display">점수: <span id="score">0</span></div>
 
     <div id="game-container">
+        <div id="youtube-bg"></div>
+        
         <div id="hit-line"></div>
         <div class="track" id="track-0"><div class="key-label">D</div></div>
         <div class="track" id="track-1"><div class="key-label">F</div></div>
@@ -140,33 +155,63 @@
         const noteSpeed = 6; 
         const hitZone = 50; 
         const hitTolerance = 40; 
-        
-        let audio; // 오디오 객체
+        let player;
+
+        // 유튜브 URL에서 영상 ID(예: dQw4w9WgXcQ)만 뽑아내는 함수
+        function extractVideoID(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
 
         function startGame() {
-            const urlInput = document.getElementById('music-url').value;
-            if (!urlInput) {
-                alert("음악 링크를 입력해주세요!");
+            const urlInput = document.getElementById('youtube-url').value;
+            const videoId = extractVideoID(urlInput);
+
+            if (!videoId) {
+                alert("올바른 유튜브 링크를 입력해주세요!");
                 return;
             }
 
-            // 오디오 설정 및 재생
-            audio = new Audio(urlInput);
-            audio.crossOrigin = "anonymous"; // 외부 링크 허용 시도
-            
-            audio.play().then(() => {
-                // 음악이 성공적으로 재생되면 게임 화면 띄우기
-                setupUI.style.display = 'none';
-                scoreDisplay.style.display = 'block';
-                gameContainer.style.display = 'flex';
-                
-                // 노트 생성 및 애니메이션 시작
-                gameInterval = setInterval(spawnNote, 800);
-                gameLoop();
-            }).catch(error => {
-                alert("해당 링크를 재생할 수 없습니다. (CORS 보안 문제이거나 잘못된 파일 형식입니다.)");
-                console.error(error);
+            // 유튜브 플레이어 생성
+            player = new YT.Player('youtube-bg', {
+                height: '100%',
+                width: '100%',
+                videoId: videoId,
+                playerVars: {
+                    'autoplay': 1, // 자동재생 시도
+                    'controls': 0, // 컨트롤러 숨김
+                    'disablekb': 1, // 키보드 조작 막음 (게임이랑 겹치니까)
+                    'rel': 0 
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
             });
+        }
+
+        function onPlayerReady(event) {
+            // 영상이 준비되면 재생 (브라우저 정책상 클릭 없이 자동재생이 막힐 수 있음)
+            event.target.playVideo();
+            
+            // UI 전환
+            setupUI.style.display = 'none';
+            scoreDisplay.style.display = 'block';
+            gameContainer.style.display = 'flex';
+        }
+
+        function onPlayerStateChange(event) {
+            // 영상이 재생중(1)일 때 노트 떨어지기 시작
+            if (event.data == YT.PlayerState.PLAYING && !gameInterval) {
+                gameInterval = setInterval(spawnNote, 600); // 0.6초마다 노트 생성 (원하면 숫자 조절)
+                gameLoop();
+            }
+            // 영상이 끝나거나 멈추면 노트 멈춤
+            else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.ENDED) {
+                clearInterval(gameInterval);
+                gameInterval = null;
+            }
         }
 
         function spawnNote() {
