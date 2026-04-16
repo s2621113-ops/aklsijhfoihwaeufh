@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>리듬 게임 (D, F, J, K)</title>
+    <style>
+        body {
+            background-color: #222;
+            color: white;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        #setup-ui {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #setup-ui input {
+            width: 300px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+        #setup-ui button {
+            padding: 10px 20px;
+            background-color: #00ffcc;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #setup-ui button:hover {
+            background-color: #00ccaa;
+        }
+        #game-container {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            background-color: #111;
+            border: 2px solid #555;
+            overflow: hidden;
+            display: none; /* 처음엔 게임 화면 숨김 */
+            flex-direction: row;
+        }
+        .track {
+            flex: 1;
+            border-right: 1px solid #333;
+            position: relative;
+        }
+        .track:last-child {
+            border-right: none;
+        }
+        .note {
+            position: absolute;
+            width: 100%;
+            height: 30px;
+            background-color: #00ffcc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+        #hit-line {
+            position: absolute;
+            bottom: 50px;
+            width: 100%;
+            height: 10px;
+            background-color: rgba(255, 0, 0, 0.5);
+            z-index: 10;
+        }
+        .key-label {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+            font-weight: bold;
+            font-size: 20px;
+            color: #888;
+        }
+        .key-active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        #score-display {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="setup-ui">
+        <h2>음악 링크를 넣어주세요</h2>
+        <input type="text" id="music-url" placeholder="예: https://example.com/music.mp3">
+        <br>
+        <button onclick="startGame()">게임 시작</button>
+        <p style="font-size: 12px; color: #aaa; margin-top: 10px;">
+            ※ 주의: 외부 보안(CORS)이 허용된 mp3 링크만 재생됩니다.<br>
+            유튜브 링크는 브라우저 정책상 오디오를 직접 추출할 수 없습니다.
+        </p>
+    </div>
+
+    <div id="score-display">점수: <span id="score">0</span></div>
+
+    <div id="game-container">
+        <div id="hit-line"></div>
+        <div class="track" id="track-0"><div class="key-label">D</div></div>
+        <div class="track" id="track-1"><div class="key-label">F</div></div>
+        <div class="track" id="track-2"><div class="key-label">J</div></div>
+        <div class="track" id="track-3"><div class="key-label">K</div></div>
+    </div>
+
+    <script>
+        const scoreElement = document.getElementById('score');
+        const setupUI = document.getElementById('setup-ui');
+        const gameContainer = document.getElementById('game-container');
+        const scoreDisplay = document.getElementById('score-display');
+        
+        const tracks = [
+            document.getElementById('track-0'),
+            document.getElementById('track-1'),
+            document.getElementById('track-2'),
+            document.getElementById('track-3')
+        ];
+        
+        const keys = { 'd': 0, 'f': 1, 'j': 2, 'k': 3 };
+        
+        let notes = []; 
+        let score = 0;
+        let gameInterval;
+        let animationId;
+        const noteSpeed = 6; 
+        const hitZone = 50; 
+        const hitTolerance = 40; 
+        
+        let audio; // 오디오 객체
+
+        function startGame() {
+            const urlInput = document.getElementById('music-url').value;
+            if (!urlInput) {
+                alert("음악 링크를 입력해주세요!");
+                return;
+            }
+
+            // 오디오 설정 및 재생
+            audio = new Audio(urlInput);
+            audio.crossOrigin = "anonymous"; // 외부 링크 허용 시도
+            
+            audio.play().then(() => {
+                // 음악이 성공적으로 재생되면 게임 화면 띄우기
+                setupUI.style.display = 'none';
+                scoreDisplay.style.display = 'block';
+                gameContainer.style.display = 'flex';
+                
+                // 노트 생성 및 애니메이션 시작
+                gameInterval = setInterval(spawnNote, 800);
+                gameLoop();
+            }).catch(error => {
+                alert("해당 링크를 재생할 수 없습니다. (CORS 보안 문제이거나 잘못된 파일 형식입니다.)");
+                console.error(error);
+            });
+        }
+
+        function spawnNote() {
+            const trackIndex = Math.floor(Math.random() * 4);
+            const noteEl = document.createElement('div');
+            noteEl.classList.add('note');
+            noteEl.style.top = '-30px';
+            tracks[trackIndex].appendChild(noteEl);
+
+            notes.push({
+                element: noteEl,
+                track: trackIndex,
+                y: -30
+            });
+        }
+
+        function gameLoop() {
+            for (let i = notes.length - 1; i >= 0; i--) {
+                let note = notes[i];
+                note.y += noteSpeed;
+                note.element.style.top = note.y + 'px';
+
+                if (note.y > 600) {
+                    note.element.remove();
+                    notes.splice(i, 1);
+                }
+            }
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (keys[key] !== undefined) {
+                const trackIndex = keys[key];
+                
+                tracks[trackIndex].classList.add('key-active');
+                setTimeout(() => tracks[trackIndex].classList.remove('key-active'), 100);
+
+                const trackNotes = notes.filter(n => n.track === trackIndex);
+                if (trackNotes.length > 0) {
+                    const targetNote = trackNotes[0]; 
+                    const distance = Math.abs(targetNote.y - (600 - hitZone - 30)); 
+
+                    if (distance < hitTolerance) {
+                        score += 100;
+                        scoreElement.innerText = score;
+                        targetNote.element.remove();
+                        const indexToRemove = notes.indexOf(targetNote);
+                        notes.splice(indexToRemove, 1);
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
