@@ -9,7 +9,9 @@
             --neon-cyan: #00f0ff;
             --neon-magenta: #ff007f;
             --neon-purple: #9d4edd;
-            --bg-dark: #0a0a12;
+            --bg-dark: #05050b;
+            --lane-width: 650px;
+            --lane-height: 800px;
         }
 
         body {
@@ -19,61 +21,91 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            min-height: 100vh;
             margin: 0;
-            padding: 20px;
-            overflow-x: hidden;
+            padding: 0;
+            overflow: hidden;
         }
 
-        /* 메인 설정 UI */
+        /* 전체 스크린 배경으로 유튜브 확장 */
+        #youtube-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            opacity: 0.25;
+            pointer-events: none;
+        }
+        #youtube-bg iframe, #player {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* 암전 배경 필터 효과 (집중도 향상) */
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle, transparent 40%, rgba(5, 5, 11, 0.8) 90%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* 메인 설정 UI (오프닝 스크린) */
         #setup-ui {
-            background: linear-gradient(145deg, #141423, #1a1a3a);
+            background: linear-gradient(145deg, #101020, #171730);
             border: 2px solid var(--neon-purple);
-            box-shadow: 0 0 20px rgba(157, 78, 221, 0.4);
-            padding: 30px;
-            border-radius: 16px;
-            margin-bottom: 20px;
+            box-shadow: 0 0 30px rgba(157, 78, 221, 0.5);
+            padding: 40px;
+            border-radius: 20px;
             text-align: center;
             z-index: 100;
-            width: 380px;
+            width: 400px;
         }
         #setup-ui h2 {
             margin-top: 0;
             color: var(--neon-cyan);
-            text-shadow: 0 0 8px var(--neon-cyan);
-            font-size: 26px;
-            letter-spacing: 2px;
+            text-shadow: 0 0 12px var(--neon-cyan);
+            font-size: 32px;
+            letter-spacing: 4px;
         }
         #setup-ui input {
             width: 100%;
             box-sizing: border-box;
-            padding: 12px;
-            margin-bottom: 20px;
+            padding: 14px;
+            margin-bottom: 25px;
             border: 1px solid #444;
-            background-color: #0d0d1a;
+            background-color: #070710;
             color: white;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 15px;
             transition: 0.3s;
         }
         #setup-ui input:focus {
             border-color: var(--neon-cyan);
             outline: none;
-            box-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
         }
         .difficulty-container {
-            margin-bottom: 25px;
+            margin-bottom: 30px;
         }
         .difficulty-container p {
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             font-size: 14px;
-            color: #aaa;
+            color: #888;
+            letter-spacing: 2px;
         }
         .diff-btn {
-            padding: 10px 20px;
-            margin: 0 5px;
-            background-color: #222;
-            color: #888;
-            border: 1px solid #444;
+            padding: 10px 24px;
+            margin: 0 8px;
+            background-color: #1a1a26;
+            color: #777;
+            border: 1px solid #333;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
@@ -81,161 +113,168 @@
         }
         .diff-btn.active {
             border-color: var(--neon-magenta);
-            background-color: rgba(255, 0, 127, 0.1);
+            background-color: rgba(255, 0, 127, 0.15);
             color: var(--neon-magenta);
-            box-shadow: 0 0 10px rgba(255, 0, 127, 0.3);
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
         }
         #start-btn {
             width: 100%;
-            padding: 14px;
+            padding: 16px;
             background: linear-gradient(90deg, var(--neon-magenta), var(--neon-purple));
             color: #fff;
             border: none;
             border-radius: 8px;
             font-weight: bold;
-            font-size: 18px;
+            font-size: 20px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 0, 127, 0.4);
+            box-shadow: 0 4px 20px rgba(255, 0, 127, 0.4);
             transition: 0.2s;
+            letter-spacing: 1px;
         }
         #start-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 0, 127, 0.6);
+            box-shadow: 0 6px 25px rgba(255, 0, 127, 0.7);
         }
 
-        /* 게임 헤더 */
+        /* 게임 상단 정보 계기판 */
         #game-header {
-            width: 420px;
+            width: var(--lane-width);
             display: none;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            z-index: 10;
         }
         #score-display {
-            font-size: 26px;
-            font-weight: 800;
+            font-size: 32px;
+            font-weight: 900;
             color: var(--neon-cyan);
-            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+            text-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+            font-family: monospace;
         }
         #exit-btn {
-            padding: 8px 16px;
-            background-color: rgba(255,255,255,0.05);
-            color: #ccc;
-            border: 1px solid #444;
+            padding: 10px 20px;
+            background-color: rgba(255,255,255,0.03);
+            color: #aaa;
+            border: 1px solid #333;
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
+            font-weight: bold;
             transition: 0.2s;
         }
         #exit-btn:hover {
             background-color: var(--neon-magenta);
             border-color: var(--neon-magenta);
             color: white;
-            box-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.6);
         }
 
-        /* 게임 메인 컨테이너 */
+        /* 3D 공간감을 위한 기어 컨테이너 피치 조정 */
+        #stage-3d {
+            perspective: 400px; /* 원근감 강도 조절 */
+            display: none;
+            z-index: 5;
+        }
+
+        /* 초대형 게임 기어 스크린 */
         #game-container {
             position: relative;
-            width: 420px;
-            height: 650px;
-            background-color: rgba(10, 10, 20, 0.88);
-            border: 3px solid #2a2a4a;
-            border-radius: 12px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.8);
-            overflow: hidden;
-            display: none; 
+            width: var(--lane-width);
+            height: var(--lane-height);
+            background: linear-gradient(to bottom, rgba(10, 10, 25, 0.95), rgba(5, 5, 15, 0.75));
+            border-left: 4px solid #2a2a4a;
+            border-right: 4px solid #2a2a4a;
+            box-shadow: 0 0 50px rgba(0,0,0,0.9);
+            display: flex;
             flex-direction: row;
-        }
-        #youtube-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            opacity: 0.45;
-            /* pointer-events: none; 를 제거하여 필요한 경우 영상 클릭이 가능하게 변경 */
+            transform: rotateX(12deg); /* 탑다운 원근 경사각 */
+            transform-origin: bottom center;
         }
 
-        /* 트랙 스타일 */
+        /* 트랙 라인 스타일 */
         .track {
             flex: 1;
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            border-right: 2px solid rgba(255, 255, 255, 0.05);
             position: relative;
-            background: linear-gradient(to bottom, transparent 70%, rgba(255,255,255,0.02));
-            transition: background 0.1s;
         }
         .track:last-child {
             border-right: none;
         }
 
-        /* 노트 */
+        /* 아케이드 스타일 슬림 와이드 노트 */
         .note {
             position: absolute;
-            width: 92%;
-            left: 4%;
-            height: 18px;
-            background: linear-gradient(90deg, #2bf0ff, #00a2ff);
-            border-radius: 3px;
-            box-shadow: 0 0 12px #00f0ff, inset 0 2px 2px rgba(255,255,255,0.7);
+            width: 96%;
+            left: 2%;
+            height: 24px;
+            background: linear-gradient(90deg, #3bf5ff, #0077ff);
+            border-radius: 4px;
+            box-shadow: 0 0 16px #00f0ff, inset 0 3px 3px rgba(255,255,255,0.8);
         }
 
-        /* 판정선 및 텍스트 */
+        /* 판정선 및 위치 고정 */
         #hit-line {
             position: absolute;
-            bottom: 70px;
+            bottom: 100px;
             width: 100%;
-            height: 6px;
-            background-color: var(--neon-magenta);
-            box-shadow: 0 0 15px var(--neon-magenta);
+            height: 8px;
+            background: linear-gradient(90deg, transparent, var(--neon-magenta), transparent);
+            box-shadow: 0 0 20px var(--neon-magenta), 0 0 5px #fff;
             z-index: 10;
         }
+        
+        /* 트랙 하단 건반 레이블 */
         .key-label {
             position: absolute;
-            bottom: 20px;
+            bottom: 30px;
             width: 100%;
             text-align: center;
             font-weight: 900;
-            font-size: 22px;
-            color: #666a8a;
+            font-size: 26px;
+            color: #4a4e6d;
+            font-family: monospace;
         }
         
+        /* 레이저 빔 이펙트 효과 */
         .key-active {
-            background: linear-gradient(to top, rgba(0, 240, 255, 0.2) 0%, rgba(0, 240, 255, 0.05) 50%, transparent 100%);
+            background: linear-gradient(to top, rgba(0, 240, 255, 0.25) 0%, rgba(0, 240, 255, 0.05) 60%, transparent 100%);
         }
         .key-active .key-label {
             color: var(--neon-cyan);
-            text-shadow: 0 0 10px var(--neon-cyan);
+            text-shadow: 0 0 12px var(--neon-cyan);
         }
 
+        /* 중앙 콤보/판정 인디케이터 */
         #judgment-display {
             position: absolute;
-            top: 55%;
+            top: 52%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 32px;
+            font-size: 42px;
             font-weight: 900;
             font-style: italic;
             pointer-events: none;
             z-index: 20;
-            letter-spacing: 3px;
+            letter-spacing: 4px;
             opacity: 0;
+            text-transform: uppercase;
         }
         .animate-judg {
-            animation: popText 0.3s ease-out forwards;
+            animation: popText 0.25s ease-out forwards;
         }
 
         @keyframes popText {
-            0% { transform: translate(-50%, -30%) scale(0.6); opacity: 0; }
-            30% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
-            100% { transform: translate(-50%, -60%) scale(1.0); opacity: 0; }
+            0% { transform: translate(-50%, -30%) scale(0.5); opacity: 0; }
+            30% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+            100% { transform: translate(-50%, -55%) scale(1.0); opacity: 0; }
         }
 
         #high-score-text {
-            font-size: 13px;
-            color: #666a8a;
-            margin-top: 15px;
+            font-size: 14px;
+            color: #5a5e7d;
+            margin-top: 20px;
+            letter-spacing: 1px;
         }
         #high-score {
             color: var(--neon-cyan);
@@ -245,12 +284,15 @@
 </head>
 <body>
 
+    <div id="youtube-bg"><div id="player"></div></div>
+    <div class="bg-overlay"></div>
+
     <div id="setup-ui">
         <h2>NEON RHYTHM</h2>
-        <input type="text" id="youtube-url" placeholder="유튜브 링크를 입력하세요" value="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+        <input type="text" id="youtube-url" placeholder="YOUTUBE LINK HERE" value="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
         
         <div class="difficulty-container">
-            <p>DIFFICULTY</p>
+            <p>SELECT DIFFICULTY</p>
             <button class="diff-btn" onclick="selectDifficulty('easy', event)">EASY</button>
             <button class="diff-btn active" onclick="selectDifficulty('normal', event)">NORMAL</button>
             <button class="diff-btn" onclick="selectDifficulty('hard', event)">HARD</button>
@@ -261,22 +303,22 @@
     </div>
 
     <div id="game-header">
-        <div id="score-display">SCORE: <span id="score">0</span></div>
+        <div id="score-display">SCORE: <span id="score">000000</span></div>
         <button id="exit-btn" onclick="endGame(false)">QUIT</button>
     </div>
 
-    <div id="game-container">
-        <div id="youtube-bg"><div id="player"></div></div>
-        <div id="judgment-display">PERFECT</div>
-        <div id="hit-line"></div>
-        <div class="track" id="track-0"><div class="key-label">D</div></div>
-        <div class="track" id="track-1"><div class="key-label">F</div></div>
-        <div class="track" id="track-2"><div class="key-label">J</div></div>
-        <div class="track" id="track-3"><div class="key-label">K</div></div>
+    <div id="stage-3d">
+        <div id="game-container">
+            <div id="judgment-display">PERFECT</div>
+            <div id="hit-line"></div>
+            <div class="track" id="track-0"><div class="key-label">D</div></div>
+            <div class="track" id="track-1"><div class="key-label">F</div></div>
+            <div class="track" id="track-2"><div class="key-label">J</div></div>
+            <div class="track" id="track-3"><div class="key-label">K</div></div>
+        </div>
     </div>
 
     <script>
-        // 비동기로 유튜브 스크립트 강제 로드
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -286,8 +328,8 @@
         const highScoreElement = document.getElementById('high-score');
         const setupUI = document.getElementById('setup-ui');
         const gameHeader = document.getElementById('game-header');
+        const stage3D = document.getElementById('stage-3d');
         const gameContainer = document.getElementById('game-container');
-        const startBtn = document.getElementById('start-btn');
         const judgmentDisplay = document.getElementById('judgment-display');
         
         const tracks = [
@@ -306,19 +348,18 @@
         let animationId;
         
         let currentDifficulty = 'normal';
-        let noteSpeed = 7; 
-        let spawnRate = 500; 
+        let noteSpeed = 8; 
+        let spawnRate = 450; 
 
-        const gameHeight = 650;
-        const hitZone = 70;  
-        const hitTolerance = 45; 
+        const gameHeight = 800; // 스케일업 완료
+        const hitZone = 100;    // 판정선 위치 조정 완료
+        const hitTolerance = 50; 
         let player;
 
         highScoreElement.innerText = highScore;
 
-        // API가 준비 안 되어도 버튼은 작동하게 만듦
         function onYouTubeIframeAPIReady() {
-            console.log("유튜브 API 준비 완료");
+            console.log("API Ready");
         }
 
         function selectDifficulty(diff, e) {
@@ -328,14 +369,14 @@
             e.target.classList.add('active');
             
             if (diff === 'easy') {
-                noteSpeed = 5;
-                spawnRate = 750;
+                noteSpeed = 6;
+                spawnRate = 700;
             } else if (diff === 'normal') {
-                noteSpeed = 7;
-                spawnRate = 500;
+                noteSpeed = 8;
+                spawnRate = 450;
             } else if (diff === 'hard') {
-                noteSpeed = 10;
-                spawnRate = 320;
+                noteSpeed = 12;
+                spawnRate = 280;
             }
         }
 
@@ -348,7 +389,7 @@
         function showJudgment(text, color) {
             judgmentDisplay.innerText = text;
             judgmentDisplay.style.color = color;
-            judgmentDisplay.style.textShadow = `0 0 10px ${color}`;
+            judgmentDisplay.style.textShadow = `0 0 15px ${color}`;
             judgmentDisplay.classList.remove('animate-judg');
             void judgmentDisplay.offsetWidth; 
             judgmentDisplay.classList.add('animate-judg');
@@ -356,7 +397,7 @@
 
         function updateScore(amount) {
             score += amount;
-            scoreElement.innerText = score;
+            scoreElement.innerText = String(score).padStart(6, '0');
         }
 
         function startGame() {
@@ -369,13 +410,12 @@
             }
 
             score = 0;
-            scoreElement.innerText = score;
+            updateScore(0);
             notes = [];
 
-            // UI를 먼저 강제로 전환 (API 지연으로 인한 렉 방지)
             setupUI.style.display = 'none';
             gameHeader.style.display = 'flex';
-            gameContainer.style.display = 'flex';
+            stage3D.style.display = 'block';
 
             initPlayer(videoId);
         }
@@ -383,16 +423,12 @@
         function initPlayer(videoId) {
             document.getElementById('youtube-bg').innerHTML = '<div id="player"></div>';
 
-            // 브라우저 환경에 따라 'YT' 객체가 없을 때를 대비한 예외 처리
             if (typeof YT === 'undefined' || !YT.Player) {
-                alert("웹 보안 환경으로 인해 유튜브 영상을 불러올 수 없습니다.\n파일을 더블클릭해 열지 말고 개발 서버(Live Server 등)를 이용해주세요.\n(일단 임시로 노트 떨어지기 모드를 시작합니다.)");
                 startFallbackGame();
                 return;
             }
 
             player = new YT.Player('player', {
-                height: '100%',
-                width: '100%',
                 videoId: videoId,
                 playerVars: {
                     'autoplay': 1,
@@ -402,36 +438,21 @@
                     'modestbranding': 1
                 },
                 events: {
-                    'onReady': onPlayerReady,
+                    'onReady': (e) => e.target.playVideo(),
                     'onStateChange': onPlayerStateChange
                 }
             });
         }
 
-        function onPlayerReady(event) {
-            // 강제 재생 시도
-            event.target.playVideo();
-        }
-
-        // 임시 로컬 모드 (유튜브 차단 시 백업 가동용)
         function startFallbackGame() {
-            if (!gameInterval) {
-                gameInterval = setInterval(spawnNote, spawnRate);
-            }
-            if (!animationId) {
-                gameLoop();
-            }
+            if (!gameInterval) gameInterval = setInterval(spawnNote, spawnRate);
+            if (!animationId) gameLoop();
         }
 
         function onPlayerStateChange(event) {
-            // 영상 재생 중이거나 버퍼링 중일 때 게임 시작 보장
             if (event.data == YT.PlayerState.PLAYING || event.data == 3) {
-                if (!gameInterval) {
-                    gameInterval = setInterval(spawnNote, spawnRate);
-                }
-                if (!animationId) {
-                    gameLoop();
-                }
+                if (!gameInterval) gameInterval = setInterval(spawnNote, spawnRate);
+                if (!animationId) gameLoop();
             }
             else if (event.data == YT.PlayerState.PAUSED) {
                 pauseGameLoop();
@@ -445,13 +466,13 @@
             const trackIndex = Math.floor(Math.random() * 4);
             const noteEl = document.createElement('div');
             noteEl.classList.add('note');
-            noteEl.style.top = '-20px';
+            noteEl.style.top = '-25px';
             tracks[trackIndex].appendChild(noteEl);
 
             notes.push({
                 element: noteEl,
                 track: trackIndex,
-                y: -20
+                y: -25
             });
         }
 
@@ -498,13 +519,13 @@
             }
 
             gameHeader.style.display = 'none';
-            gameContainer.style.display = 'none';
+            stage3D.style.display = 'none';
             setupUI.style.display = 'block';
         }
 
         window.addEventListener('keydown', (e) => {
             if (e.isComposing) return;
-            if (gameContainer.style.display !== 'flex') return; 
+            if (stage3D.style.display !== 'block') return; 
 
             const key = e.key.toLowerCase();
             if (keys[key] !== undefined) {
@@ -518,7 +539,7 @@
                 if (trackNotes.length > 0) {
                     const targetNote = trackNotes[0];
                     const hitLineY = gameHeight - hitZone - 4; 
-                    const noteCenterY = targetNote.y + 9;     
+                    const noteCenterY = targetNote.y + 12;     
                     const distance = Math.abs(noteCenterY - hitLineY); 
 
                     if (distance < hitTolerance) {
