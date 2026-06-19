@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네온 아케이드 유튜브 리듬 게임</title>
+    <title>네온 아케이드 유튜브 리듬 게임 Pro</title>
     <style>
         :root {
             --neon-cyan: #00f0ff;
             --neon-magenta: #ff007f;
             --neon-purple: #9d4edd;
+            --neon-gold: #ffd700;
             --bg-dark: #05050b;
             --lane-width: 650px;
             --lane-height: 800px;
@@ -28,7 +29,7 @@
             overflow: hidden;
         }
 
-        /* 전체 스크린 배경으로 유튜브 확장 */
+        /* 배경 유튜브 */
         #youtube-bg {
             position: fixed;
             top: 0;
@@ -36,7 +37,7 @@
             width: 100vw;
             height: 100vh;
             z-index: -2;
-            opacity: 0.25;
+            opacity: 0.2;
             pointer-events: none;
         }
         #youtube-bg iframe, #player {
@@ -44,19 +45,18 @@
             height: 100% !important;
         }
 
-        /* 암전 배경 필터 효과 (집중도 향상) */
         .bg-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: radial-gradient(circle, transparent 40%, rgba(5, 5, 11, 0.8) 90%);
+            background: radial-gradient(circle, transparent 30%, rgba(5, 5, 11, 0.85) 85%);
             z-index: -1;
             pointer-events: none;
         }
 
-        /* 메인 설정 UI (오프닝 스크린) */
+        /* 메인 설정 UI */
         #setup-ui {
             background: linear-gradient(145deg, #101020, #171730);
             border: 2px solid var(--neon-purple);
@@ -65,7 +65,7 @@
             border-radius: 20px;
             text-align: center;
             z-index: 100;
-            width: 400px;
+            width: 420px;
         }
         #setup-ui h2 {
             margin-top: 0;
@@ -84,12 +84,6 @@
             color: white;
             border-radius: 8px;
             font-size: 15px;
-            transition: 0.3s;
-        }
-        #setup-ui input:focus {
-            border-color: var(--neon-cyan);
-            outline: none;
-            box-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
         }
         .difficulty-container {
             margin-bottom: 30px;
@@ -101,8 +95,8 @@
             letter-spacing: 2px;
         }
         .diff-btn {
-            padding: 10px 24px;
-            margin: 0 8px;
+            padding: 10px 16px;
+            margin: 0 4px;
             background-color: #1a1a26;
             color: #777;
             border: 1px solid #333;
@@ -110,12 +104,20 @@
             cursor: pointer;
             font-weight: bold;
             transition: 0.2s;
+            font-size: 13px;
         }
         .diff-btn.active {
             border-color: var(--neon-magenta);
             background-color: rgba(255, 0, 127, 0.15);
             color: var(--neon-magenta);
             box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
+        }
+        /* 매우 어려움 전용 활성화 스타일 */
+        .diff-btn.active.v-hard {
+            border-color: var(--neon-gold);
+            background-color: rgba(255, 215, 0, 0.15);
+            color: var(--neon-gold);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
         }
         #start-btn {
             width: 100%;
@@ -129,39 +131,78 @@
             cursor: pointer;
             box-shadow: 0 4px 20px rgba(255, 0, 127, 0.4);
             transition: 0.2s;
-            letter-spacing: 1px;
         }
         #start-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 25px rgba(255, 0, 127, 0.7);
         }
 
-        /* 게임 상단 정보 계기판 */
-        #game-header {
-            width: var(--lane-width);
+        /* 인게임 전체 레이아웃 (기어 + 사이드 스코어 보드) */
+        #game-layout {
             display: none;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            z-index: 10;
+            flex-direction: row;
+            align-items: flex-end;
+            gap: 30px;
+            z-index: 5;
         }
-        #score-display {
-            font-size: 32px;
+
+        /* 3D 기어 컨테이너 */
+        #stage-3d {
+            perspective: 500px;
+        }
+
+        #game-container {
+            position: relative;
+            width: var(--lane-width);
+            height: var(--lane-height);
+            background: linear-gradient(to bottom, rgba(10, 10, 25, 0.95), rgba(5, 5, 15, 0.75));
+            border-left: 4px solid #3a3a6a;
+            border-right: 4px solid #3a3a6a;
+            box-shadow: 0 0 60px rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: row;
+            transform: rotateX(14deg);
+            transform-origin: bottom center;
+        }
+
+        /* 옆으로 이동한 사이드 스코어 보드 */
+        #side-dashboard {
+            width: 220px;
+            background: linear-gradient(135deg, rgba(20, 20, 40, 0.9), rgba(10, 10, 25, 0.9));
+            border: 2px solid #3a3a6a;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 0 25px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 20px; /* 기어 각도 고려해 살짝 띄움 */
+        }
+        .dash-block h3 {
+            margin: 0 0 5px 0;
+            font-size: 13px;
+            color: #8a8eb5;
+            letter-spacing: 1px;
+        }
+        .dash-value {
+            font-size: 28px;
             font-weight: 900;
             color: var(--neon-cyan);
-            text-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
             font-family: monospace;
         }
         #exit-btn {
-            padding: 10px 20px;
+            width: 100%;
+            padding: 12px;
             background-color: rgba(255,255,255,0.03);
             color: #aaa;
-            border: 1px solid #333;
+            border: 1px solid #444;
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
             font-weight: bold;
             transition: 0.2s;
+            margin-top: 10px;
         }
         #exit-btn:hover {
             background-color: var(--neon-magenta);
@@ -170,115 +211,134 @@
             box-shadow: 0 0 15px rgba(255, 0, 127, 0.6);
         }
 
-        /* 3D 공간감을 위한 기어 컨테이너 피치 조정 */
-        #stage-3d {
-            perspective: 400px; /* 원근감 강도 조절 */
-            display: none;
-            z-index: 5;
-        }
-
-        /* 초대형 게임 기어 스크린 */
-        #game-container {
-            position: relative;
-            width: var(--lane-width);
-            height: var(--lane-height);
-            background: linear-gradient(to bottom, rgba(10, 10, 25, 0.95), rgba(5, 5, 15, 0.75));
-            border-left: 4px solid #2a2a4a;
-            border-right: 4px solid #2a2a4a;
-            box-shadow: 0 0 50px rgba(0,0,0,0.9);
-            display: flex;
-            flex-direction: row;
-            transform: rotateX(12deg); /* 탑다운 원근 경사각 */
-            transform-origin: bottom center;
-        }
-
-        /* 트랙 라인 스타일 */
+        /* 트랙 및 슬림 와이드 노트 */
         .track {
             flex: 1;
-            border-right: 2px solid rgba(255, 255, 255, 0.05);
+            border-right: 2px solid rgba(255, 255, 255, 0.04);
             position: relative;
         }
         .track:last-child {
             border-right: none;
         }
 
-        /* 아케이드 스타일 슬림 와이드 노트 */
         .note {
             position: absolute;
             width: 96%;
             left: 2%;
-            height: 24px;
+            height: 26px; /* 두께 살짝 강화 */
             background: linear-gradient(90deg, #3bf5ff, #0077ff);
             border-radius: 4px;
             box-shadow: 0 0 16px #00f0ff, inset 0 3px 3px rgba(255,255,255,0.8);
         }
 
-        /* 판정선 및 위치 고정 */
+        /* 판정선 넓힘 및 이펙트 강화 */
         #hit-line {
             position: absolute;
-            bottom: 100px;
+            bottom: 110px;
             width: 100%;
-            height: 8px;
+            height: 12px; /* 두께를 키워 시각적 안정감 제공 */
             background: linear-gradient(90deg, transparent, var(--neon-magenta), transparent);
-            box-shadow: 0 0 20px var(--neon-magenta), 0 0 5px #fff;
+            box-shadow: 0 0 25px var(--neon-magenta), 0 0 8px #fff;
             z-index: 10;
         }
         
-        /* 트랙 하단 건반 레이블 */
         .key-label {
             position: absolute;
-            bottom: 30px;
+            bottom: 35px;
             width: 100%;
             text-align: center;
             font-weight: 900;
-            font-size: 26px;
+            font-size: 28px;
             color: #4a4e6d;
             font-family: monospace;
         }
         
-        /* 레이저 빔 이펙트 효과 */
         .key-active {
-            background: linear-gradient(to top, rgba(0, 240, 255, 0.25) 0%, rgba(0, 240, 255, 0.05) 60%, transparent 100%);
+            background: linear-gradient(to top, rgba(0, 240, 255, 0.25) 0%, rgba(0, 240, 255, 0.03) 60%, transparent 100%);
         }
         .key-active .key-label {
             color: var(--neon-cyan);
             text-shadow: 0 0 12px var(--neon-cyan);
         }
 
-        /* 중앙 콤보/판정 인디케이터 */
-        #judgment-display {
+        /* 판정 텍스트 */
+        #judgment-container {
             position: absolute;
-            top: 52%;
+            top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 42px;
-            font-weight: 900;
-            font-style: italic;
+            text-align: center;
             pointer-events: none;
             z-index: 20;
+        }
+        #judgment-display {
+            font-size: 46px;
+            font-weight: 900;
+            font-style: italic;
             letter-spacing: 4px;
             opacity: 0;
             text-transform: uppercase;
         }
+        
+        /* 콤보 시스템 스타일 */
+        #combo-display {
+            font-size: 38px;
+            font-weight: 800;
+            color: #ffffff;
+            text-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+            font-family: monospace;
+            margin-top: 5px;
+            opacity: 0;
+        }
+        #combo-display span {
+            font-size: 16px;
+            font-weight: 400;
+            color: #8a8eb5;
+            margin-left: 4px;
+        }
+
         .animate-judg {
-            animation: popText 0.25s ease-out forwards;
+            animation: popText 0.22s ease-out forwards;
+        }
+        .show-combo {
+            opacity: 1 !important;
+            transform: scale(1.1);
+            transition: transform 0.05s ease-out;
         }
 
         @keyframes popText {
-            0% { transform: translate(-50%, -30%) scale(0.5); opacity: 0; }
-            30% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
-            100% { transform: translate(-50%, -55%) scale(1.0); opacity: 0; }
+            0% { transform: scale(0.5); opacity: 0; }
+            30% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1.0); opacity: 0; }
+        }
+
+        /* 속도 업 알림 오버레이 */
+        #speed-alert {
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--neon-gold);
+            text-shadow: 0 0 15px var(--neon-gold);
+            letter-spacing: 5px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 30;
+        }
+        .animate-speed {
+            animation: speedFlash 0.6s ease-in-out 2;
+        }
+        @keyframes speedFlash {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
         }
 
         #high-score-text {
             font-size: 14px;
             color: #5a5e7d;
             margin-top: 20px;
-            letter-spacing: 1px;
-        }
-        #high-score {
-            color: var(--neon-cyan);
-            font-weight: bold;
         }
     </style>
 </head>
@@ -296,25 +356,43 @@
             <button class="diff-btn" onclick="selectDifficulty('easy', event)">EASY</button>
             <button class="diff-btn active" onclick="selectDifficulty('normal', event)">NORMAL</button>
             <button class="diff-btn" onclick="selectDifficulty('hard', event)">HARD</button>
+            <button class="diff-btn" onclick="selectDifficulty('vhard', event)" style="color: #bb9e00;">V-HARD</button>
         </div>
 
         <button id="start-btn" onclick="startGame()">GAME START</button>
-        <div id="high-score-text">HIGH SCORE: <span id="high-score">0</span></div>
+        <div id="high-score-text">HIGH SCORE: <span id="high-score">000000</span></div>
     </div>
 
-    <div id="game-header">
-        <div id="score-display">SCORE: <span id="score">000000</span></div>
-        <button id="exit-btn" onclick="endGame(false)">QUIT</button>
-    </div>
+    <div id="game-layout">
+        <div id="stage-3d">
+            <div id="game-container">
+                <div id="speed-alert">SPEED UP!</div>
+                <div id="judgment-container">
+                    <div id="judgment-display">PERFECT</div>
+                    <div id="combo-display">0<span>COMBO</span></div>
+                </div>
+                <div id="hit-line"></div>
+                <div class="track" id="track-0"><div class="key-label">D</div></div>
+                <div class="track" id="track-1"><div class="key-label">F</div></div>
+                <div class="track" id="track-2"><div class="key-label">J</div></div>
+                <div class="track" id="track-3"><div class="key-label">K</div></div>
+            </div>
+        </div>
 
-    <div id="stage-3d">
-        <div id="game-container">
-            <div id="judgment-display">PERFECT</div>
-            <div id="hit-line"></div>
-            <div class="track" id="track-0"><div class="key-label">D</div></div>
-            <div class="track" id="track-1"><div class="key-label">F</div></div>
-            <div class="track" id="track-2"><div class="key-label">J</div></div>
-            <div class="track" id="track-3"><div class="key-label">K</div></div>
+        <div id="side-dashboard">
+            <div class="dash-block">
+                <h3>CURRENT SCORE</h3>
+                <div id="score-display" class="dash-value">000000</div>
+            </div>
+            <div class="dash-block">
+                <h3>TARGET HIGH</h3>
+                <div id="dash-high-display" class="dash-value" style="color: var(--neon-purple);">000000</div>
+            </div>
+            <div class="dash-block">
+                <h3>SPEED</h3>
+                <div id="speed-display" class="dash-value" style="color: var(--neon-gold);">1.0x</div>
+            </div>
+            <button id="exit-btn" onclick="endGame(false)">QUIT GAME</button>
         </div>
     </div>
 
@@ -324,13 +402,17 @@
         var firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-        const scoreElement = document.getElementById('score');
+        const scoreElement = document.getElementById('score-display');
+        const dashHighElement = document.getElementById('dash-high-display');
         const highScoreElement = document.getElementById('high-score');
+        const speedElement = document.getElementById('speed-display');
+        
         const setupUI = document.getElementById('setup-ui');
-        const gameHeader = document.getElementById('game-header');
-        const stage3D = document.getElementById('stage-3d');
+        const gameLayout = document.getElementById('game-layout');
         const gameContainer = document.getElementById('game-container');
         const judgmentDisplay = document.getElementById('judgment-display');
+        const comboDisplay = document.getElementById('combo-display');
+        const speedAlert = document.getElementById('speed-alert');
         
         const tracks = [
             document.getElementById('track-0'),
@@ -343,41 +425,41 @@
         
         let notes = []; 
         let score = 0;
+        let combo = 0;
+        let baseSpeed = 8;
+        let noteSpeed = 8; 
+        let spawnRate = 450; 
         let highScore = localStorage.getItem('rhythm_high_score') || 0;
         let gameInterval;
         let animationId;
-        
-        let currentDifficulty = 'normal';
-        let noteSpeed = 8; 
-        let spawnRate = 450; 
-
-        const gameHeight = 800; // 스케일업 완료
-        const hitZone = 100;    // 판정선 위치 조정 완료
-        const hitTolerance = 50; 
         let player;
 
-        highScoreElement.innerText = highScore;
+        // 가속 단계 트래킹용 변수
+        let speedTier = 0;
 
-        function onYouTubeIframeAPIReady() {
-            console.log("API Ready");
-        }
+        highScoreElement.innerText = String(highScore).padStart(6, '0');
+        dashHighElement.innerText = String(highScore).padStart(6, '0');
+
+        function onYouTubeIframeAPIReady() { console.log("API Ready"); }
 
         function selectDifficulty(diff, e) {
-            currentDifficulty = diff;
             const buttons = document.querySelectorAll('.diff-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            e.target.classList.add('active');
+            buttons.forEach(btn => btn.classList.remove('active', 'v-hard'));
             
             if (diff === 'easy') {
-                noteSpeed = 6;
-                spawnRate = 700;
+                e.target.classList.add('active');
+                baseSpeed = 6; spawnRate = 650;
             } else if (diff === 'normal') {
-                noteSpeed = 8;
-                spawnRate = 450;
+                e.target.classList.add('active');
+                baseSpeed = 8; spawnRate = 450;
             } else if (diff === 'hard') {
-                noteSpeed = 12;
-                spawnRate = 280;
+                e.target.classList.add('active');
+                baseSpeed = 11; spawnRate = 280;
+            } else if (diff === 'vhard') {
+                e.target.classList.add('active', 'v-hard');
+                baseSpeed = 15; spawnRate = 180; // 무지막지한 하드코어 난이도
             }
+            noteSpeed = baseSpeed;
         }
 
         function extractVideoID(url) {
@@ -395,8 +477,43 @@
             judgmentDisplay.classList.add('animate-judg');
         }
 
+        function triggerCombo() {
+            if (combo > 0) {
+                comboDisplay.innerHTML = `${combo}<span>COMBO</span>`;
+                comboDisplay.classList.remove('show-combo');
+                void comboDisplay.offsetWidth;
+                comboDisplay.classList.add('show-combo');
+            } else {
+                comboDisplay.classList.remove('show-combo');
+            }
+            
+            // 콤보 도달 체크에 따른 속도 업 시스템
+            checkSpeedUp();
+        }
+
+        function checkSpeedUp() {
+            let targetSpeed = baseSpeed;
+            let currentTier = 0;
+
+            if (combo >= 150) { currentTier = 3; targetSpeed += 4.5; }
+            else if (combo >= 70) { currentTier = 2; targetSpeed += 3.0; }
+            else if (combo >= 30) { currentTier = 1; targetSpeed += 1.5; }
+
+            // 신규 티어로 속도가 올라갈 때 레이블 시스템 가동
+            if (currentTier > speedTier) {
+                speedAlert.classList.remove('animate-speed');
+                void speedAlert.offsetWidth;
+                speedAlert.classList.add('animate-speed');
+            }
+            
+            speedTier = currentTier;
+            noteSpeed = targetSpeed;
+            speedElement.innerText = (noteSpeed / baseSpeed).toFixed(1) + "x";
+        }
+
         function updateScore(amount) {
             score += amount;
+            if (score < 0) score = 0;
             scoreElement.innerText = String(score).padStart(6, '0');
         }
 
@@ -410,12 +527,18 @@
             }
 
             score = 0;
+            combo = 0;
+            speedTier = 0;
+            noteSpeed = baseSpeed;
             updateScore(0);
+            triggerCombo();
             notes = [];
+            
+            speedElement.innerText = "1.0x";
+            dashHighElement.innerText = String(highScore).padStart(6, '0');
 
             setupUI.style.display = 'none';
-            gameHeader.style.display = 'flex';
-            stage3D.style.display = 'block';
+            gameLayout.style.display = 'flex';
 
             initPlayer(videoId);
         }
@@ -430,13 +553,7 @@
 
             player = new YT.Player('player', {
                 videoId: videoId,
-                playerVars: {
-                    'autoplay': 1,
-                    'controls': 0,
-                    'disablekb': 1,
-                    'rel': 0,
-                    'modestbranding': 1
-                },
+                playerVars: { 'autoplay': 1, 'controls': 0, 'disablekb': 1, 'rel': 0, 'modestbranding': 1 },
                 events: {
                     'onReady': (e) => e.target.playVideo(),
                     'onStateChange': onPlayerStateChange
@@ -453,11 +570,9 @@
             if (event.data == YT.PlayerState.PLAYING || event.data == 3) {
                 if (!gameInterval) gameInterval = setInterval(spawnNote, spawnRate);
                 if (!animationId) gameLoop();
-            }
-            else if (event.data == YT.PlayerState.PAUSED) {
+            } else if (event.data == YT.PlayerState.PAUSED) {
                 pauseGameLoop();
-            }
-            else if (event.data == YT.PlayerState.ENDED) {
+            } else if (event.data == YT.PlayerState.ENDED) {
                 endGame(true); 
             }
         }
@@ -466,14 +581,10 @@
             const trackIndex = Math.floor(Math.random() * 4);
             const noteEl = document.createElement('div');
             noteEl.classList.add('note');
-            noteEl.style.top = '-25px';
+            noteEl.style.top = '-26px';
             tracks[trackIndex].appendChild(noteEl);
 
-            notes.push({
-                element: noteEl,
-                track: trackIndex,
-                y: -25
-            });
+            notes.push({ element: noteEl, track: trackIndex, y: -26 });
         }
 
         function gameLoop() {
@@ -482,8 +593,10 @@
                 note.y += noteSpeed;
                 note.element.style.top = note.y + 'px';
 
-                if (note.y > gameHeight) {
+                if (note.y > 800) {
                     showJudgment('MISS', '#ff0055');
+                    combo = 0; // 콤보 브레이크
+                    triggerCombo();
                     updateScore(-50); 
                     note.element.remove();
                     notes.splice(i, 1);
@@ -493,18 +606,13 @@
         }
 
         function pauseGameLoop() {
-            clearInterval(gameInterval);
-            gameInterval = null;
-            cancelAnimationFrame(animationId);
-            animationId = null;
+            clearInterval(gameInterval); gameInterval = null;
+            cancelAnimationFrame(animationId); animationId = null;
         }
 
         function endGame(isFinished) {
             pauseGameLoop();
-
-            if (player && typeof player.destroy === 'function') {
-                player.destroy();
-            }
+            if (player && typeof player.destroy === 'function') player.destroy();
 
             notes.forEach(note => note.element.remove());
             notes = [];
@@ -512,20 +620,19 @@
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('rhythm_high_score', highScore);
-                highScoreElement.innerText = highScore;
+                highScoreElement.innerText = String(highScore).padStart(6, '0');
                 alert(`🎉 NEW HIGH SCORE: ${score}점`);
             } else if (isFinished) {
                 alert(`PLAY FINISHED!\n최종 점수: ${score}점`);
             }
 
-            gameHeader.style.display = 'none';
-            stage3D.style.display = 'none';
+            gameLayout.style.display = 'none';
             setupUI.style.display = 'block';
         }
 
         window.addEventListener('keydown', (e) => {
             if (e.isComposing) return;
-            if (stage3D.style.display !== 'block') return; 
+            if (gameLayout.style.display !== 'flex') return; 
 
             const key = e.key.toLowerCase();
             if (keys[key] !== undefined) {
@@ -538,25 +645,30 @@
                 
                 if (trackNotes.length > 0) {
                     const targetNote = trackNotes[0];
-                    const hitLineY = gameHeight - hitZone - 4; 
-                    const noteCenterY = targetNote.y + 12;     
+                    const hitLineY = 800 - 110 - 6; // 타격선 정중앙 Y축 위치
+                    const noteCenterY = targetNote.y + 13;     
                     const distance = Math.abs(noteCenterY - hitLineY); 
 
-                    if (distance < hitTolerance) {
+                    // 판정 범위를 70px 규격으로 시원하게 완화
+                    if (distance < 70) {
                         showJudgment('PERFECT', '#00f0ff');
+                        combo++;
+                        triggerCombo();
                         updateScore(100);
                         
                         targetNote.element.remove();
                         const indexToRemove = notes.indexOf(targetNote);
-                        if (indexToRemove > -1) {
-                            notes.splice(indexToRemove, 1);
-                        }
+                        if (indexToRemove > -1) notes.splice(indexToRemove, 1);
                     } else {
                         showJudgment('WRONG', '#ffbb00');
+                        combo = 0; 
+                        triggerCombo();
                         updateScore(-30); 
                     }
                 } else {
                     showJudgment('WRONG', '#ffbb00');
+                    combo = 0;
+                    triggerCombo();
                     updateScore(-30);
                 }
             }
