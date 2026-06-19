@@ -98,15 +98,9 @@
             box-shadow: 0 4px 15px rgba(255, 0, 127, 0.4);
             transition: 0.2s;
         }
-        #start-btn:hover:not(:disabled) {
+        #start-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(255, 0, 127, 0.6);
-        }
-        #start-btn:disabled {
-            background: #444;
-            box-shadow: none;
-            cursor: not-allowed;
-            color: #777;
         }
 
         /* 게임 헤더 */
@@ -160,11 +154,11 @@
             width: 100%;
             height: 100%;
             z-index: -1;
-            pointer-events: none;
-            opacity: 0.35;
+            opacity: 0.45;
+            /* pointer-events: none; 를 제거하여 필요한 경우 영상 클릭이 가능하게 변경 */
         }
 
-        /* 트랙 라인 스타일 */
+        /* 트랙 스타일 */
         .track {
             flex: 1;
             border-right: 1px solid rgba(255, 255, 255, 0.08);
@@ -176,7 +170,7 @@
             border-right: none;
         }
 
-        /* 노트 디자인 (시중 리듬게임 스타일 슬림 바) */
+        /* 노트 */
         .note {
             position: absolute;
             width: 92%;
@@ -187,7 +181,7 @@
             box-shadow: 0 0 12px #00f0ff, inset 0 2px 2px rgba(255,255,255,0.7);
         }
 
-        /* 이펙트 및 판정선 */
+        /* 판정선 및 텍스트 */
         #hit-line {
             position: absolute;
             bottom: 70px;
@@ -207,7 +201,6 @@
             color: #666a8a;
         }
         
-        /* 키를 누르고 있을 때 트랙 레이저 불빛 효과 */
         .key-active {
             background: linear-gradient(to top, rgba(0, 240, 255, 0.2) 0%, rgba(0, 240, 255, 0.05) 50%, transparent 100%);
         }
@@ -216,7 +209,6 @@
             text-shadow: 0 0 10px var(--neon-cyan);
         }
 
-        /* 판정 전용 텍스트 알림 */
         #judgment-display {
             position: absolute;
             top: 55%;
@@ -264,7 +256,7 @@
             <button class="diff-btn" onclick="selectDifficulty('hard', event)">HARD</button>
         </div>
 
-        <button id="start-btn" onclick="startGame()" disabled>LOADING API...</button>
+        <button id="start-btn" onclick="startGame()">GAME START</button>
         <div id="high-score-text">HIGH SCORE: <span id="high-score">0</span></div>
     </div>
 
@@ -284,7 +276,7 @@
     </div>
 
     <script>
-        // 비동기 유튜브 API 스크립트 가동
+        // 비동기로 유튜브 스크립트 강제 로드
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -318,15 +310,15 @@
         let spawnRate = 500; 
 
         const gameHeight = 650;
-        const hitZone = 70;  // 바닥에서 70px 위
+        const hitZone = 70;  
         const hitTolerance = 45; 
         let player;
 
         highScoreElement.innerText = highScore;
 
+        // API가 준비 안 되어도 버튼은 작동하게 만듦
         function onYouTubeIframeAPIReady() {
-            startBtn.disabled = false;
-            startBtn.innerText = "GAME START";
+            console.log("유튜브 API 준비 완료");
         }
 
         function selectDifficulty(diff, e) {
@@ -358,14 +350,12 @@
             judgmentDisplay.style.color = color;
             judgmentDisplay.style.textShadow = `0 0 10px ${color}`;
             judgmentDisplay.classList.remove('animate-judg');
-            void judgmentDisplay.offsetWidth; // 리플로우 트리거로 애니메이션 리셋
+            void judgmentDisplay.offsetWidth; 
             judgmentDisplay.classList.add('animate-judg');
         }
 
         function updateScore(amount) {
             score += amount;
-            // 점수가 영하로 떨어지지 않게 방지하려면 아래 주석을 해제하세요.
-            // if (score < 0) score = 0; 
             scoreElement.innerText = score;
         }
 
@@ -382,11 +372,23 @@
             scoreElement.innerText = score;
             notes = [];
 
+            // UI를 먼저 강제로 전환 (API 지연으로 인한 렉 방지)
+            setupUI.style.display = 'none';
+            gameHeader.style.display = 'flex';
+            gameContainer.style.display = 'flex';
+
             initPlayer(videoId);
         }
 
         function initPlayer(videoId) {
             document.getElementById('youtube-bg').innerHTML = '<div id="player"></div>';
+
+            // 브라우저 환경에 따라 'YT' 객체가 없을 때를 대비한 예외 처리
+            if (typeof YT === 'undefined' || !YT.Player) {
+                alert("웹 보안 환경으로 인해 유튜브 영상을 불러올 수 없습니다.\n파일을 더블클릭해 열지 말고 개발 서버(Live Server 등)를 이용해주세요.\n(일단 임시로 노트 떨어지기 모드를 시작합니다.)");
+                startFallbackGame();
+                return;
+            }
 
             player = new YT.Player('player', {
                 height: '100%',
@@ -395,3 +397,149 @@
                 playerVars: {
                     'autoplay': 1,
                     'controls': 0,
+                    'disablekb': 1,
+                    'rel': 0,
+                    'modestbranding': 1
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            // 강제 재생 시도
+            event.target.playVideo();
+        }
+
+        // 임시 로컬 모드 (유튜브 차단 시 백업 가동용)
+        function startFallbackGame() {
+            if (!gameInterval) {
+                gameInterval = setInterval(spawnNote, spawnRate);
+            }
+            if (!animationId) {
+                gameLoop();
+            }
+        }
+
+        function onPlayerStateChange(event) {
+            // 영상 재생 중이거나 버퍼링 중일 때 게임 시작 보장
+            if (event.data == YT.PlayerState.PLAYING || event.data == 3) {
+                if (!gameInterval) {
+                    gameInterval = setInterval(spawnNote, spawnRate);
+                }
+                if (!animationId) {
+                    gameLoop();
+                }
+            }
+            else if (event.data == YT.PlayerState.PAUSED) {
+                pauseGameLoop();
+            }
+            else if (event.data == YT.PlayerState.ENDED) {
+                endGame(true); 
+            }
+        }
+
+        function spawnNote() {
+            const trackIndex = Math.floor(Math.random() * 4);
+            const noteEl = document.createElement('div');
+            noteEl.classList.add('note');
+            noteEl.style.top = '-20px';
+            tracks[trackIndex].appendChild(noteEl);
+
+            notes.push({
+                element: noteEl,
+                track: trackIndex,
+                y: -20
+            });
+        }
+
+        function gameLoop() {
+            for (let i = notes.length - 1; i >= 0; i--) {
+                let note = notes[i];
+                note.y += noteSpeed;
+                note.element.style.top = note.y + 'px';
+
+                if (note.y > gameHeight) {
+                    showJudgment('MISS', '#ff0055');
+                    updateScore(-50); 
+                    note.element.remove();
+                    notes.splice(i, 1);
+                }
+            }
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function pauseGameLoop() {
+            clearInterval(gameInterval);
+            gameInterval = null;
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+
+        function endGame(isFinished) {
+            pauseGameLoop();
+
+            if (player && typeof player.destroy === 'function') {
+                player.destroy();
+            }
+
+            notes.forEach(note => note.element.remove());
+            notes = [];
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('rhythm_high_score', highScore);
+                highScoreElement.innerText = highScore;
+                alert(`🎉 NEW HIGH SCORE: ${score}점`);
+            } else if (isFinished) {
+                alert(`PLAY FINISHED!\n최종 점수: ${score}점`);
+            }
+
+            gameHeader.style.display = 'none';
+            gameContainer.style.display = 'none';
+            setupUI.style.display = 'block';
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.isComposing) return;
+            if (gameContainer.style.display !== 'flex') return; 
+
+            const key = e.key.toLowerCase();
+            if (keys[key] !== undefined) {
+                const trackIndex = keys[key];
+                
+                tracks[trackIndex].classList.add('key-active');
+                setTimeout(() => tracks[trackIndex].classList.remove('key-active'), 80);
+
+                const trackNotes = notes.filter(n => n.track === trackIndex);
+                
+                if (trackNotes.length > 0) {
+                    const targetNote = trackNotes[0];
+                    const hitLineY = gameHeight - hitZone - 4; 
+                    const noteCenterY = targetNote.y + 9;     
+                    const distance = Math.abs(noteCenterY - hitLineY); 
+
+                    if (distance < hitTolerance) {
+                        showJudgment('PERFECT', '#00f0ff');
+                        updateScore(100);
+                        
+                        targetNote.element.remove();
+                        const indexToRemove = notes.indexOf(targetNote);
+                        if (indexToRemove > -1) {
+                            notes.splice(indexToRemove, 1);
+                        }
+                    } else {
+                        showJudgment('WRONG', '#ffbb00');
+                        updateScore(-30); 
+                    }
+                } else {
+                    showJudgment('WRONG', '#ffbb00');
+                    updateScore(-30);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
