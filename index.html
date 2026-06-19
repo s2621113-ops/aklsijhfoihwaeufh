@@ -18,30 +18,75 @@
         }
         #setup-ui {
             background-color: #333;
-            padding: 20px;
+            padding: 25px;
             border-radius: 10px;
             margin-bottom: 20px;
             text-align: center;
             z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
         #setup-ui input {
             width: 350px;
             padding: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             border: none;
             border-radius: 5px;
+            font-size: 14px;
         }
-        #setup-ui button {
-            padding: 10px 20px;
+        .difficulty-container {
+            margin-bottom: 20px;
+        }
+        .diff-btn {
+            padding: 8px 15px;
+            margin: 0 5px;
+            background-color: #555;
+            color: white;
+            border: 2px solid transparent;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .diff-btn.active {
+            border-color: #00ffcc;
+            background-color: #111;
+            color: #00ffcc;
+        }
+        #start-btn {
+            padding: 12px 25px;
             background-color: #ff0000;
             color: #fff;
             border: none;
             border-radius: 5px;
             font-weight: bold;
+            font-size: 16px;
             cursor: pointer;
         }
-        #setup-ui button:hover {
+        #start-btn:hover {
             background-color: #cc0000;
+        }
+        #game-header {
+            width: 400px;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        #score-display {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #exit-btn {
+            padding: 6px 12px;
+            background-color: #444;
+            color: #fff;
+            border: 1px solid #666;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        #exit-btn:hover {
+            background-color: #ff3333;
+            border-color: #ff3333;
         }
         #game-container {
             position: relative;
@@ -53,7 +98,6 @@
             display: none; 
             flex-direction: row;
         }
-        /* 유튜브 영상을 게임 배경으로 깔기 */
         #youtube-bg {
             position: absolute;
             top: 0;
@@ -62,7 +106,7 @@
             height: 100%;
             z-index: -1;
             pointer-events: none;
-            opacity: 0.5; /* 배경 영상 투명도 */
+            opacity: 0.4;
         }
         .track {
             flex: 1;
@@ -101,31 +145,37 @@
         .key-active {
             background-color: rgba(255, 255, 255, 0.3);
         }
-        #score-display {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            display: none;
+        #high-score-text {
+            font-size: 14px;
+            color: #00ffcc;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
 
     <div id="setup-ui">
-        <h2>유튜브 링크를 넣어주세요</h2>
-        <input type="text" id="youtube-url" placeholder="예: https://www.youtube.com/watch?v=어쩌구저쩌구">
-        <br>
-        <button onclick="startGame()">유튜브로 게임 시작!</button>
-        <p style="font-size: 13px; color: #bbb; margin-top: 10px;">
-            ※ 음악은 유튜브에서 재생되며, 노트는 무작위로 떨어집니다.
-        </p>
+        <h2>유튜브 리듬 게임</h2>
+        <input type="text" id="youtube-url" placeholder="유튜브 링크를 입력하세요" value="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+        
+        <div class="difficulty-container">
+            <p style="margin-top: 0; margin-bottom: 8px; font-weight: bold;">난이도 선택</p>
+            <button class="diff-btn" onclick="selectDifficulty('easy')">쉬움</button>
+            <button class="diff-btn active" onclick="selectDifficulty('normal')">보통</button>
+            <button class="diff-btn" onclick="selectDifficulty('hard')">어려움</button>
+        </div>
+
+        <button id="start-btn" onclick="startGame()">게임 시작!</button>
+        <div id="high-score-text">최고 점수: <span id="high-score">0</span></div>
     </div>
 
-    <div id="score-display">점수: <span id="score">0</span></div>
+    <div id="game-header">
+        <div id="score-display">점수: <span id="score">0</span></div>
+        <button id="exit-btn" onclick="endGame(false)">게임 종료</button>
+    </div>
 
     <div id="game-container">
-        <div id="youtube-bg"></div>
-        
+        <div id="youtube-bg"><div id="player"></div></div>
         <div id="hit-line"></div>
         <div class="track" id="track-0"><div class="key-label">D</div></div>
         <div class="track" id="track-1"><div class="key-label">F</div></div>
@@ -135,9 +185,10 @@
 
     <script>
         const scoreElement = document.getElementById('score');
+        const highScoreElement = document.getElementById('high-score');
         const setupUI = document.getElementById('setup-ui');
+        const gameHeader = document.getElementById('game-header');
         const gameContainer = document.getElementById('game-container');
-        const scoreDisplay = document.getElementById('score-display');
         
         const tracks = [
             document.getElementById('track-0'),
@@ -150,14 +201,53 @@
         
         let notes = []; 
         let score = 0;
+        let highScore = localStorage.getItem('rhythm_high_score') || 0;
         let gameInterval;
         let animationId;
-        const noteSpeed = 6; 
-        const hitZone = 50; 
-        const hitTolerance = 40; 
-        let player;
+        
+        // 난이도 설정 변수
+        let currentDifficulty = 'normal';
+        let noteSpeed = 6; 
+        let spawnRate = 600; // 노트 생성 주기 (ms)
 
-        // 유튜브 URL에서 영상 ID(예: dQw4w9WgXcQ)만 뽑아내는 함수
+        const hitZone = 50;  
+        const hitTolerance = 45; 
+        let player;
+        let apiReady = false;
+        let pendingVideoId = null;
+
+        // 초기 최고점수 표시
+        highScoreElement.innerText = highScore;
+
+        // 유튜브 API 로드 완료 콜백
+        function onYouTubeIframeAPIReady() {
+            apiReady = true;
+            if (pendingVideoId) {
+                initPlayer(pendingVideoId);
+            }
+        }
+
+        // 난이도 선택 함수
+        function selectDifficulty(diff) {
+            currentDifficulty = diff;
+            const buttons = document.querySelectorAll('.diff-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // 클릭한 버튼 활성화 및 난이도별 값 세팅
+            event.target.classList.add('active');
+            
+            if (diff === 'easy') {
+                noteSpeed = 4;
+                spawnRate = 800; // 느리고 덜 나옴
+            } else if (diff === 'normal') {
+                noteSpeed = 6;
+                spawnRate = 550; // 보통
+            } else if (diff === 'hard') {
+                noteSpeed = 9;
+                spawnRate = 350; // 빠르고 많이 나옴
+            }
+        }
+
         function extractVideoID(url) {
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             const match = url.match(regExp);
@@ -173,16 +263,34 @@
                 return;
             }
 
-            // 유튜브 플레이어 생성
-            player = new YT.Player('youtube-bg', {
+            // 게임 플레이 데이터 초기화
+            score = 0;
+            scoreElement.innerText = score;
+            notes = [];
+
+            if (apiReady) {
+                initPlayer(videoId);
+            } else {
+                pendingVideoId = videoId;
+            }
+        }
+
+        function initPlayer(videoId) {
+            if (player && typeof player.destroy === 'function') {
+                player.destroy();
+            }
+
+            player = new YT.Player('player', {
                 height: '100%',
                 width: '100%',
                 videoId: videoId,
                 playerVars: {
-                    'autoplay': 1, // 자동재생 시도
-                    'controls': 0, // 컨트롤러 숨김
-                    'disablekb': 1, // 키보드 조작 막음 (게임이랑 겹치니까)
-                    'rel': 0 
+                    'autoplay': 1,
+                    'controls': 0,
+                    'disablekb': 1,
+                    'rel': 0,
+                    'modestbranding': 1,
+                    'origin': window.location.origin
                 },
                 events: {
                     'onReady': onPlayerReady,
@@ -192,25 +300,29 @@
         }
 
         function onPlayerReady(event) {
-            // 영상이 준비되면 재생 (브라우저 정책상 클릭 없이 자동재생이 막힐 수 있음)
             event.target.playVideo();
             
-            // UI 전환
+            // UI를 게임 화면으로 전환
             setupUI.style.display = 'none';
-            scoreDisplay.style.display = 'block';
+            gameHeader.style.display = 'flex';
             gameContainer.style.display = 'flex';
         }
 
         function onPlayerStateChange(event) {
-            // 영상이 재생중(1)일 때 노트 떨어지기 시작
-            if (event.data == YT.PlayerState.PLAYING && !gameInterval) {
-                gameInterval = setInterval(spawnNote, 600); // 0.6초마다 노트 생성 (원하면 숫자 조절)
-                gameLoop();
+            if (event.data == YT.PlayerState.PLAYING) {
+                if (!gameInterval) {
+                    gameInterval = setInterval(spawnNote, spawnRate); // 선택된 난이도 주기로 생성
+                }
+                if (!animationId) {
+                    gameLoop();
+                }
             }
-            // 영상이 끝나거나 멈추면 노트 멈춤
-            else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.ENDED) {
-                clearInterval(gameInterval);
-                gameInterval = null;
+            else if (event.data == YT.PlayerState.PAUSED) {
+                pauseGameLoop();
+            }
+            // 영상이 정상적으로 끝났을 때 자동 종료 처리
+            else if (event.data == YT.PlayerState.ENDED) {
+                endGame(true); 
             }
         }
 
@@ -242,25 +354,72 @@
             animationId = requestAnimationFrame(gameLoop);
         }
 
+        function pauseGameLoop() {
+            clearInterval(gameInterval);
+            gameInterval = null;
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+
+        // 게임을 완전히 종료하고 메인 화면으로 돌아가는 함수
+        function endGame(isFinished) {
+            // 1. 타이머 및 루프 정지
+            pauseGameLoop();
+
+            // 2. 유튜브 플레이어 정지 및 파괴
+            if (player && typeof player.destroy === 'function') {
+                player.destroy();
+            }
+
+            // 3. 화면에 남아있는 모든 노트 전멸시키기
+            notes.forEach(note => note.element.remove());
+            notes = [];
+
+            // 4. 최고 점수 체크 및 저장
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('rhythm_high_score', highScore);
+                highScoreElement.innerText = highScore;
+                alert(`🎉 축하합니다! 최고 기록 달성: ${score}점`);
+            } else if (isFinished) {
+                alert(`게임이 끝났습니다! 최종 점수: ${score}점`);
+            }
+
+            // 5. UI 원상 복구
+            gameHeader.style.display = 'none';
+            gameContainer.style.display = 'none';
+            setupUI.style.display = 'block';
+        }
+
+        // 키보드 판정 로직
         window.addEventListener('keydown', (e) => {
+            if (e.isComposing) return;
+            // 게임 중이 아닐 때는 작동 안 함
+            if (gameContainer.style.display !== 'flex') return; 
+
             const key = e.key.toLowerCase();
             if (keys[key] !== undefined) {
                 const trackIndex = keys[key];
                 
                 tracks[trackIndex].classList.add('key-active');
-                setTimeout(() => tracks[trackIndex].classList.remove('key-active'), 100);
+                setTimeout(() => tracks[trackIndex].classList.remove('key-active'), 80);
 
                 const trackNotes = notes.filter(n => n.track === trackIndex);
                 if (trackNotes.length > 0) {
-                    const targetNote = trackNotes[0]; 
-                    const distance = Math.abs(targetNote.y - (600 - hitZone - 30)); 
+                    const targetNote = trackNotes[0];
+                    const hitLineY = 600 - hitZone - 5; 
+                    const noteCenterY = targetNote.y + 15;
+                    const distance = Math.abs(noteCenterY - hitLineY); 
 
                     if (distance < hitTolerance) {
                         score += 100;
                         scoreElement.innerText = score;
                         targetNote.element.remove();
+                        
                         const indexToRemove = notes.indexOf(targetNote);
-                        notes.splice(indexToRemove, 1);
+                        if (indexToRemove > -1) {
+                            notes.splice(indexToRemove, 1);
+                        }
                     }
                 }
             }
