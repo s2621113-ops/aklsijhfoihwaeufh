@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>이상한 사람의 리듬게임</title>
+    <title>네온 아케이드 유튜브 리듬 게임 Pro (6K + 광고 최적화)</title>
     <style>
         :root {
             --neon-cyan: #00f0ff;
@@ -214,7 +214,6 @@
             border-right: none;
         }
 
-        /* 일반 노트 */
         .note {
             position: absolute;
             width: 96%;
@@ -226,7 +225,6 @@
             z-index: 5;
         }
 
-        /* 롱노트 디자인 */
         .note.hold-note {
             background: linear-gradient(180deg, rgba(255, 0, 200, 0.9), rgba(0, 240, 255, 0.7));
             border: 1px solid var(--neon-magenta);
@@ -375,7 +373,6 @@
                     <div id="combo-display">0<span>COMBO</span></div>
                 </div>
                 <div id="hit-line"></div>
-                <!-- 6 트랙 -->
                 <div class="track" id="track-0"><div class="key-label">S</div></div>
                 <div class="track" id="track-1"><div class="key-label">D</div></div>
                 <div class="track" id="track-2"><div class="key-label">F</div></div>
@@ -403,6 +400,7 @@
     </div>
 
     <script>
+        // YouTube API 스크립트 로드
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -428,9 +426,8 @@
             document.getElementById('track-5')
         ];
         
-        // 6개 키 맵핑
         const keys = { 's': 0, 'd': 1, 'f': 2, 'j': 3, 'k': 4, 'l': 5 };
-        const activeKeys = [false, false, false, false, false, false]; // 키 누름 상태 추적
+        const activeKeys = [false, false, false, false, false, false];
         
         let notes = []; 
         let score = 0;
@@ -438,8 +435,8 @@
         let baseSpeed = 8;
         let noteSpeed = 8; 
         let spawnRate = 400; 
-        let doubleChance = 0.2; // 동시 노트 확률
-        let holdChance = 0.25;   // 롱노트 생성 확률
+        let doubleChance = 0.2;
+        let holdChance = 0.25;
         let highScore = localStorage.getItem('rhythm_high_score_6k') || 0;
         let gameInterval;
         let animationId;
@@ -564,10 +561,9 @@
                 note.y += noteSpeed;
                 note.element.style.top = note.y + 'px';
 
-                // 롱노트 누르는 동안 처리
                 if (note.isHold && note.holding) {
                     if (activeKeys[note.track]) {
-                        updateScore(2); // 지점 유지 점수
+                        updateScore(2);
                         note.height -= noteSpeed;
                         note.element.style.height = Math.max(0, note.height) + 'px';
 
@@ -581,7 +577,6 @@
                             continue;
                         }
                     } else {
-                        // 중간에 키를 뗀 경우
                         showJudgment('MISS', '#ff0055');
                         combo = 0;
                         triggerCombo();
@@ -591,7 +586,6 @@
                     }
                 }
 
-                // 일반 노트/롱노트 지나침 (MISS)
                 if (note.y > 800) {
                     showJudgment('MISS', '#ff0055');
                     combo = 0; 
@@ -630,6 +624,7 @@
             initPlayer(videoId);
         }
 
+        // [핵심 변경 사항] 광고 차단 옵션 및 노쿠키 도메인 적용
         function initPlayer(videoId) {
             document.getElementById('youtube-bg').innerHTML = '<div id="player"></div>';
 
@@ -641,9 +636,28 @@
             try {
                 player = new YT.Player('player', {
                     videoId: videoId,
-                    playerVars: { 'autoplay': 1, 'controls': 0, 'disablekb': 1, 'rel': 0, 'modestbranding': 1, 'origin': window.location.origin },
+                    host: 'https://www.youtube-nocookie.com', // 1. 노쿠키 도메인을 사용해 맞춤형 광고 스크립트 차단
+                    playerVars: { 
+                        'autoplay': 1, 
+                        'controls': 0, 
+                        'disablekb': 1, 
+                        'rel': 0, 
+                        'modestbranding': 1, 
+                        'iv_load_policy': 3, // 2. 동영상 주석 및 광고 레이어 비활성화
+                        'playsinline': 1,
+                        'enablejsapi': 1,
+                        'origin': window.location.origin 
+                    },
                     events: {
-                        'onReady': (e) => { try { e.target.playVideo(); } catch(err) { startFallbackGame(); } },
+                        'onReady': (e) => { 
+                            try { 
+                                e.target.mute(); // 3. 음소거 후 재생 시도 시 일부 광고 생략 트릭
+                                e.target.playVideo();
+                                setTimeout(() => { e.target.unMute(); }, 150);
+                            } catch(err) { 
+                                startFallbackGame(); 
+                            } 
+                        },
                         'onStateChange': onPlayerStateChange,
                         'onError': () => { startFallbackGame(); }
                     }
@@ -694,7 +708,6 @@
             setupUI.style.display = 'block';
         }
 
-        // Keydown 이벤트
         window.addEventListener('keydown', (e) => {
             if (e.isComposing) return;
             if (gameLayout.style.display !== 'flex') return; 
@@ -702,7 +715,7 @@
             const key = e.key.toLowerCase();
             if (keys[key] !== undefined) {
                 const trackIndex = keys[key];
-                if (activeKeys[trackIndex]) return; // 연속 연타 방지
+                if (activeKeys[trackIndex]) return;
                 
                 activeKeys[trackIndex] = true;
                 tracks[trackIndex].classList.add('key-active');
@@ -712,7 +725,7 @@
                 if (trackNotes.length > 0) {
                     const targetNote = trackNotes[0];
                     const hitLineY = 800 - 110 - 6; 
-                    const noteHeadY = targetNote.y + targetNote.height; // 노의 하단 머리 위치
+                    const noteHeadY = targetNote.y + targetNote.height;
                     const distance = Math.abs(noteHeadY - hitLineY); 
 
                     if (distance < 70) {
@@ -745,7 +758,6 @@
             }
         });
 
-        // Keyup 이벤트 (롱노트 지원)
         window.addEventListener('keyup', (e) => {
             const key = e.key.toLowerCase();
             if (keys[key] !== undefined) {
