@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네온 아케이드 유튜브 리듬 게임 Pro</title>
+    <title>이상한 사람의 리듬게임</title>
     <style>
         :root {
             --neon-cyan: #00f0ff;
@@ -11,7 +11,7 @@
             --neon-purple: #9d4edd;
             --neon-gold: #ffd700;
             --bg-dark: #05050b;
-            --lane-width: 650px;
+            --lane-width: 780px;
             --lane-height: 800px;
         }
 
@@ -63,7 +63,7 @@
             border-radius: 20px;
             text-align: center;
             z-index: 100;
-            width: 420px;
+            width: 440px;
         }
         #setup-ui h2 {
             margin-top: 0;
@@ -93,8 +93,8 @@
             letter-spacing: 2px;
         }
         .diff-btn {
-            padding: 10px 16px;
-            margin: 0 4px;
+            padding: 10px 14px;
+            margin: 0 3px;
             background-color: #1a1a26;
             color: #777;
             border: 1px solid #333;
@@ -161,7 +161,7 @@
         }
 
         #side-dashboard {
-            width: 220px;
+            width: 200px;
             background: linear-gradient(135deg, rgba(20, 20, 40, 0.9), rgba(10, 10, 25, 0.9));
             border: 2px solid #3a3a6a;
             border-radius: 12px;
@@ -179,7 +179,7 @@
             letter-spacing: 1px;
         }
         .dash-value {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 900;
             color: var(--neon-cyan);
             text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
@@ -214,14 +214,28 @@
             border-right: none;
         }
 
+        /* 일반 노트 */
         .note {
             position: absolute;
             width: 96%;
             left: 2%;
-            height: 26px;
+            height: 24px;
             background: linear-gradient(90deg, #3bf5ff, #0077ff);
             border-radius: 4px;
             box-shadow: 0 0 16px #00f0ff, inset 0 3px 3px rgba(255,255,255,0.8);
+            z-index: 5;
+        }
+
+        /* 롱노트 디자인 */
+        .note.hold-note {
+            background: linear-gradient(180deg, rgba(255, 0, 200, 0.9), rgba(0, 240, 255, 0.7));
+            border: 1px solid var(--neon-magenta);
+            box-shadow: 0 0 20px var(--neon-magenta);
+            border-radius: 6px;
+        }
+        .note.hold-note.active-holding {
+            background: linear-gradient(180deg, #ffd700, #ff007f);
+            box-shadow: 0 0 30px var(--neon-gold);
         }
 
         #hit-line {
@@ -240,13 +254,13 @@
             width: 100%;
             text-align: center;
             font-weight: 900;
-            font-size: 28px;
+            font-size: 26px;
             color: #4a4e6d;
             font-family: monospace;
         }
         
         .key-active {
-            background: linear-gradient(to top, rgba(0, 240, 255, 0.25) 0%, rgba(0, 240, 255, 0.03) 60%, transparent 100%);
+            background: linear-gradient(to top, rgba(0, 240, 255, 0.3) 0%, rgba(0, 240, 255, 0.03) 60%, transparent 100%);
         }
         .key-active .key-label {
             color: var(--neon-cyan);
@@ -337,11 +351,11 @@
     <div class="bg-overlay"></div>
 
     <div id="setup-ui">
-        <h2>NEON RHYTHM</h2>
+        <h2>NEON 6K RHYTHM</h2>
         <input type="text" id="youtube-url" placeholder="YOUTUBE LINK HERE" value="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
         
         <div class="difficulty-container">
-            <p>SELECT DIFFICULTY</p>
+            <p>SELECT DIFFICULTY (6 KEYS)</p>
             <button class="diff-btn" onclick="selectDifficulty('easy', event)">EASY</button>
             <button class="diff-btn active" onclick="selectDifficulty('normal', event)">NORMAL</button>
             <button class="diff-btn" onclick="selectDifficulty('hard', event)">HARD</button>
@@ -361,10 +375,13 @@
                     <div id="combo-display">0<span>COMBO</span></div>
                 </div>
                 <div id="hit-line"></div>
-                <div class="track" id="track-0"><div class="key-label">D</div></div>
-                <div class="track" id="track-1"><div class="key-label">F</div></div>
-                <div class="track" id="track-2"><div class="key-label">J</div></div>
-                <div class="track" id="track-3"><div class="key-label">K</div></div>
+                <!-- 6 트랙 -->
+                <div class="track" id="track-0"><div class="key-label">S</div></div>
+                <div class="track" id="track-1"><div class="key-label">D</div></div>
+                <div class="track" id="track-2"><div class="key-label">F</div></div>
+                <div class="track" id="track-3"><div class="key-label">J</div></div>
+                <div class="track" id="track-4"><div class="key-label">K</div></div>
+                <div class="track" id="track-5"><div class="key-label">L</div></div>
             </div>
         </div>
 
@@ -386,7 +403,6 @@
     </div>
 
     <script>
-        // 안전장치 강화: 유튜브 스크립트 강제 바인딩
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -399,7 +415,6 @@
         
         const setupUI = document.getElementById('setup-ui');
         const gameLayout = document.getElementById('game-layout');
-        const gameContainer = document.getElementById('game-container');
         const judgmentDisplay = document.getElementById('judgment-display');
         const comboDisplay = document.getElementById('combo-display');
         const speedAlert = document.getElementById('speed-alert');
@@ -408,18 +423,24 @@
             document.getElementById('track-0'),
             document.getElementById('track-1'),
             document.getElementById('track-2'),
-            document.getElementById('track-3')
+            document.getElementById('track-3'),
+            document.getElementById('track-4'),
+            document.getElementById('track-5')
         ];
         
-        const keys = { 'd': 0, 'f': 1, 'j': 2, 'k': 3 };
+        // 6개 키 맵핑
+        const keys = { 's': 0, 'd': 1, 'f': 2, 'j': 3, 'k': 4, 'l': 5 };
+        const activeKeys = [false, false, false, false, false, false]; // 키 누름 상태 추적
         
         let notes = []; 
         let score = 0;
         let combo = 0;
         let baseSpeed = 8;
         let noteSpeed = 8; 
-        let spawnRate = 450; 
-        let highScore = localStorage.getItem('rhythm_high_score') || 0;
+        let spawnRate = 400; 
+        let doubleChance = 0.2; // 동시 노트 확률
+        let holdChance = 0.25;   // 롱노트 생성 확률
+        let highScore = localStorage.getItem('rhythm_high_score_6k') || 0;
         let gameInterval;
         let animationId;
         let player;
@@ -436,16 +457,16 @@
             
             if (diff === 'easy') {
                 e.target.classList.add('active');
-                baseSpeed = 6; spawnRate = 650;
+                baseSpeed = 6; spawnRate = 550; doubleChance = 0.1; holdChance = 0.15;
             } else if (diff === 'normal') {
                 e.target.classList.add('active');
-                baseSpeed = 8; spawnRate = 450;
+                baseSpeed = 8; spawnRate = 400; doubleChance = 0.2; holdChance = 0.25;
             } else if (diff === 'hard') {
                 e.target.classList.add('active');
-                baseSpeed = 11; spawnRate = 280;
+                baseSpeed = 11; spawnRate = 260; doubleChance = 0.35; holdChance = 0.30;
             } else if (diff === 'vhard') {
                 e.target.classList.add('active', 'v-hard');
-                baseSpeed = 15; spawnRate = 180;
+                baseSpeed = 15; spawnRate = 170; doubleChance = 0.50; holdChance = 0.35;
             }
             noteSpeed = baseSpeed;
         }
@@ -502,6 +523,87 @@
             scoreElement.innerText = String(score).padStart(6, '0');
         }
 
+        function spawnNote() {
+            let count = Math.random() < doubleChance ? 2 : 1;
+            let availableTracks = [0, 1, 2, 3, 4, 5];
+
+            for (let c = 0; c < count; c++) {
+                if (availableTracks.length === 0) break;
+                
+                const randIndex = Math.floor(Math.random() * availableTracks.length);
+                const trackIndex = availableTracks.splice(randIndex, 1)[0];
+
+                const isHold = Math.random() < holdChance;
+                const length = isHold ? Math.floor(Math.random() * 120) + 120 : 24;
+
+                const noteEl = document.createElement('div');
+                noteEl.classList.add('note');
+                if (isHold) noteEl.classList.add('hold-note');
+
+                noteEl.style.height = length + 'px';
+                noteEl.style.top = -length + 'px';
+                tracks[trackIndex].appendChild(noteEl);
+
+                notes.push({
+                    element: noteEl,
+                    track: trackIndex,
+                    y: -length,
+                    height: length,
+                    isHold: isHold,
+                    holding: false,
+                    hitStart: false
+                });
+            }
+        }
+
+        function gameLoop() {
+            const hitLineY = 800 - 110 - 6;
+
+            for (let i = notes.length - 1; i >= 0; i--) {
+                let note = notes[i];
+                note.y += noteSpeed;
+                note.element.style.top = note.y + 'px';
+
+                // 롱노트 누르는 동안 처리
+                if (note.isHold && note.holding) {
+                    if (activeKeys[note.track]) {
+                        updateScore(2); // 지점 유지 점수
+                        note.height -= noteSpeed;
+                        note.element.style.height = Math.max(0, note.height) + 'px';
+
+                        if (note.height <= 10) {
+                            showJudgment('PERFECT', '#00f0ff');
+                            combo++;
+                            triggerCombo();
+                            updateScore(150);
+                            note.element.remove();
+                            notes.splice(i, 1);
+                            continue;
+                        }
+                    } else {
+                        // 중간에 키를 뗀 경우
+                        showJudgment('MISS', '#ff0055');
+                        combo = 0;
+                        triggerCombo();
+                        note.element.remove();
+                        notes.splice(i, 1);
+                        continue;
+                    }
+                }
+
+                // 일반 노트/롱노트 지나침 (MISS)
+                if (note.y > 800) {
+                    showJudgment('MISS', '#ff0055');
+                    combo = 0; 
+                    triggerCombo();
+                    updateScore(-50); 
+                    note.element.remove();
+                    notes.splice(i, 1);
+                }
+            }
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
         function startGame() {
             const urlInput = document.getElementById('youtube-url').value;
             const videoId = extractVideoID(urlInput);
@@ -531,9 +633,7 @@
         function initPlayer(videoId) {
             document.getElementById('youtube-bg').innerHTML = '<div id="player"></div>';
 
-            // [핵심 변경] 상용 차단 시에도 100% 가동 보장 루틴
             if (typeof YT === 'undefined' || !YT.Player) {
-                console.log("유튜브 API가 차단되어 대체 모드로 진입합니다.");
                 startFallbackGame();
                 return;
             }
@@ -541,20 +641,11 @@
             try {
                 player = new YT.Player('player', {
                     videoId: videoId,
-                    playerVars: { 
-                        'autoplay': 1, 
-                        'controls': 0, 
-                        'disablekb': 1, 
-                        'rel': 0, 
-                        'modestbranding': 1,
-                        'origin': window.location.origin // 실시간 도메인 매핑 보안 연동
-                    },
+                    playerVars: { 'autoplay': 1, 'controls': 0, 'disablekb': 1, 'rel': 0, 'modestbranding': 1, 'origin': window.location.origin },
                     events: {
-                        'onReady': (e) => {
-                            try { e.target.playVideo(); } catch(err) { startFallbackGame(); }
-                        },
+                        'onReady': (e) => { try { e.target.playVideo(); } catch(err) { startFallbackGame(); } },
                         'onStateChange': onPlayerStateChange,
-                        'onError': () => { startFallbackGame(); } // 에러 발생 시 즉시 백업 모드 가동
+                        'onError': () => { startFallbackGame(); }
                     }
                 });
             } catch (e) {
@@ -578,34 +669,6 @@
             }
         }
 
-        function spawnNote() {
-            const trackIndex = Math.floor(Math.random() * 4);
-            const noteEl = document.createElement('div');
-            noteEl.classList.add('note');
-            noteEl.style.top = '-26px';
-            tracks[trackIndex].appendChild(noteEl);
-
-            notes.push({ element: noteEl, track: trackIndex, y: -26 });
-        }
-
-        function gameLoop() {
-            for (let i = notes.length - 1; i >= 0; i--) {
-                let note = notes[i];
-                note.y += noteSpeed;
-                note.element.style.top = note.y + 'px';
-
-                if (note.y > 800) {
-                    showJudgment('MISS', '#ff0055');
-                    combo = 0; 
-                    triggerCombo();
-                    updateScore(-50); 
-                    note.element.remove();
-                    notes.splice(i, 1);
-                }
-            }
-            animationId = requestAnimationFrame(gameLoop);
-        }
-
         function pauseGameLoop() {
             clearInterval(gameInterval); gameInterval = null;
             cancelAnimationFrame(animationId); animationId = null;
@@ -620,7 +683,7 @@
 
             if (score > highScore) {
                 highScore = score;
-                localStorage.setItem('rhythm_high_score', highScore);
+                localStorage.setItem('rhythm_high_score_6k', highScore);
                 highScoreElement.innerText = String(highScore).padStart(6, '0');
                 alert(`🎉 NEW HIGH SCORE: ${score}점`);
             } else if (isFinished) {
@@ -631,6 +694,7 @@
             setupUI.style.display = 'block';
         }
 
+        // Keydown 이벤트
         window.addEventListener('keydown', (e) => {
             if (e.isComposing) return;
             if (gameLayout.style.display !== 'flex') return; 
@@ -638,27 +702,34 @@
             const key = e.key.toLowerCase();
             if (keys[key] !== undefined) {
                 const trackIndex = keys[key];
+                if (activeKeys[trackIndex]) return; // 연속 연타 방지
                 
+                activeKeys[trackIndex] = true;
                 tracks[trackIndex].classList.add('key-active');
-                setTimeout(() => tracks[trackIndex].classList.remove('key-active'), 80);
 
-                const trackNotes = notes.filter(n => n.track === trackIndex);
+                const trackNotes = notes.filter(n => n.track === trackIndex && !n.holding);
                 
                 if (trackNotes.length > 0) {
                     const targetNote = trackNotes[0];
                     const hitLineY = 800 - 110 - 6; 
-                    const noteCenterY = targetNote.y + 13;     
-                    const distance = Math.abs(noteCenterY - hitLineY); 
+                    const noteHeadY = targetNote.y + targetNote.height; // 노의 하단 머리 위치
+                    const distance = Math.abs(noteHeadY - hitLineY); 
 
                     if (distance < 70) {
-                        showJudgment('PERFECT', '#00f0ff');
-                        combo++;
-                        triggerCombo();
-                        updateScore(100);
-                        
-                        targetNote.element.remove();
-                        const indexToRemove = notes.indexOf(targetNote);
-                        if (indexToRemove > -1) notes.splice(indexToRemove, 1);
+                        if (targetNote.isHold) {
+                            showJudgment('HOLD!', '#00f0ff');
+                            targetNote.holding = true;
+                            targetNote.element.classList.add('active-holding');
+                        } else {
+                            showJudgment('PERFECT', '#00f0ff');
+                            combo++;
+                            triggerCombo();
+                            updateScore(100);
+                            
+                            targetNote.element.remove();
+                            const indexToRemove = notes.indexOf(targetNote);
+                            if (indexToRemove > -1) notes.splice(indexToRemove, 1);
+                        }
                     } else {
                         showJudgment('WRONG', '#ffbb00');
                         combo = 0; 
@@ -671,6 +742,16 @@
                     triggerCombo();
                     updateScore(-30);
                 }
+            }
+        });
+
+        // Keyup 이벤트 (롱노트 지원)
+        window.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (keys[key] !== undefined) {
+                const trackIndex = keys[key];
+                activeKeys[trackIndex] = false;
+                tracks[trackIndex].classList.remove('key-active');
             }
         });
     </script>
